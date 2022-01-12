@@ -1,0 +1,59 @@
+version: "3.7"
+
+services:
+  haproxy:
+    container_name: haproxy
+    build: ./haproxy
+    ports:
+    - 8080:9000
+    networks:
+      haproxy:
+        ipv4_address: 10.10.0.3
+    volumes:
+    - ./haproxy/haproxy.cfg.EXAMPLE:/usr/local/etc/haproxy/haproxy.cfg:ro
+    - haproxy_log:/var/log:z
+
+  web1:
+    container_name: web1
+    build: ./nodeapp
+    ports:
+      - 81:9999
+    networks:
+      haproxy:
+        ipv4_address: 10.10.0.4
+
+  fluentd:
+    container_name: fluenty
+    build: ./fluentd
+    ports:
+      - 5140:5140
+    networks:
+      haproxy:
+        ipv4_address: 10.10.0.5
+
+  mongo:
+    container_name: mongo
+    image: mongo
+    restart: always
+    ports:
+      - 27017:27017
+    networks:
+      haproxy:
+        ipv4_address: 10.10.0.6
+    volumes:
+      - ./fluentd/mongo_db_data:/data/db
+    # environment:
+    #   MONGO_INITDB_ROOT_USERNAME: haproxy_user
+    #   MONGO_INITDB_ROOT_PASSWORD: changeme
+
+volumes:
+  haproxy_log:
+    external: true
+networks:
+  haproxy:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.0.0/16
+          gateway: 10.10.0.1
+

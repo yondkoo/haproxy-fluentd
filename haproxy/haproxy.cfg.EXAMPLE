@@ -1,0 +1,25 @@
+global
+    maxconn 3000
+    log 127.0.0.1 local0 info
+
+defaults
+    log global
+    retries 3
+    timeout queue 1m
+    timeout connect 10s
+    timeout client 1m
+    timeout server 1m
+    timeout http-keep-alive 10s
+    timeout check 10s
+
+frontend http
+    bind *:9000
+    mode http
+    default_backend backend_default
+    option httplog
+    log-format '{"timestamp": "%Ts", "network":{"client_ip": "%ci"}, "ssl":{"version":"%sslv", "ciphers": "%sslc"}, "request":{"uri": "%[capture.req.uri,json(utf8s)]", "header": {"host": "%[capture.req.hdr(1),json(utf8s)]"}}}'
+
+backend backend_default
+    mode http
+    balance roundrobin
+    server local-server web1:9999
